@@ -38,6 +38,7 @@ module.exports = async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       locale: 'fr',
+      allow_promotion_codes: true,
       line_items,
       phone_number_collection: { enabled: true },
       custom_text: {
