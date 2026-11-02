@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espace Gestionnaire · Le Bienvenue</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f5f7; color: #333; margin: 0; padding: 20px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    h1, h2 { color: #1a1a1a; }
+    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #edf2f7; }
+    th { background: #f8fafc; font-weight: 600; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; }
+    .badge-alert { background: #fed7d7; color: #9b2c2c; }
+    .badge-ok { background: #c6f6d5; color: #22543d; }
+    button { background: #2b6cb0; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #2c5282; }
+    input[type="password"], input[type="text"] { padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; width: 280px; }
+    #auth-screen { text-align: center; margin-top: 100px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Auth Screen -->
+  <div id="auth-screen" class="card">
+    <h2>Connexion Espace Gestionnaire</h2>
+    <p>Veuillez saisir la clé SUPABASE_ANON_KEY pour charger l'interface.</p>
+
+    <div style="margin: 20px 0;">
+      <input type="password" id="anon-key" placeholder="Paster votre SUPABASE_ANON_KEY ici">
+      <button onclick="login()">Se connecter</button>
+    </div>
+  </div>
+
+  <!-- Dashboard Main Content -->
+  <div id="dashboard" style="display: none;">
+    <h1>Tableau de bord · Commandes & Stocks</h1>
+    
+    <div class="card">
+      <h2>État des Stocks & Réservations</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th>Capacité Totale</th>
+            <th>Réservés (Payés)</th>
+            <th>Disponible</th>
+            <th>Alerte (<= 5)</th>
+          </tr>
+        </thead>
+        <tbody id="stock-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Dernières Commandes</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Client</th>
+            <th>Email</th>
+            <th>Téléphone</th>
+            <th>Montant</th>
+            <th>Articles</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody id="order-rows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  let supabaseClient = null;
+
+  function login() {
+    const anonKey = document.getElementById('anon-key').value.trim();
+    if (!anonKey) return alert('Veuillez entrer la clé ANON.');
+
+    // URL from Supabase project
+    const supabaseUrl = 'https://uopyugjckbwvsxqurhwg.supabase.co';
+    supabaseClient = supabase.createClient(supabaseUrl, anonKey);
+
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+
+    loadData();
+  }
+
+  async function loadData() {
+    if (!supabaseClient) return;
+
+    // Fetch Products
+    const { data: products, error: prodErr } = await supabaseClient.from('products').select('*');
+    if (prodErr) console.error(prodErr);
+    else renderProducts(products || []);
+
+    // Fetch Orders
+    const { data: orders, error: ordErr } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
+    if (ordErr) console.error(ordErr);
+    else renderOrders(orders || []);
+  }
+
+  function renderProducts(products) {
+    const container = document.getElementById('stock-rows');
+    container.innerHTML = products.map(p => {
+      const remaining = (p.stock_total || 50) - (p.reserved || 0);
+      const isLow = remaining <= (p.alert_threshold || 5);
+      return `
+        <tr>
+          <td><strong>${p.name}</strong></td>
+          <td>${p.stock_total || 50}</td>
+          <td>${p.reserved || 0}</td>
+          <td><strong>${remaining}</strong></td>
+          <td><span class="badge ${isLow ? 'badge-alert' : 'badge-ok'}">${isLow ? 'STOCK BAS' : 'OK'}</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderOrders(orders) {
+    const container = document.getElementById('order-rows');
+    if (orders.length === 0) {
+      container.innerHTML = '<tr><td colspan="8">Aucune commande enregistrée pour le moment.</td></tr>';
+      return;
+    }
+    container.innerHTML = orders.map(o => {
+      const itemsList = (o.items || []).map(i => `${i.quantity}x ${i.id}`).join(', ');
+      const date = new Date(o.created_at).toLocaleString('fr-FR');
+      return `
+        <tr>
+          <td>${o.id}</td>
+          <td>${date}</td>
+          <td><strong>${o.customer_name || '-'}</strong></td>
+          <td>${o.customer_email || '-'}</td>
+          <td>${o.customer_phone || '-'}</td>
+          <td>${o.total_amount ? o.total_amount.toFixed(2) + ' €' : '-'}</td>
+          <td>${itemsList}</td>
+          <td><span class="badge badge-ok">${o.status}</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+</script>
+</body>
+</html>
