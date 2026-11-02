@@ -5,63 +5,93 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Espace Gestionnaire · Le Bienvenue</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f5f7; color: #333; margin: 0; padding: 20px; }
+    :root {
+      --bg-color: #fcfbf9;
+      --card-bg: #ffffff;
+      --text-main: #1c1917;
+      --text-muted: #78716c;
+      --accent: #881337;
+      --accent-hover: #700f2d;
+      --border: #e7e5e4;
+      --success-bg: #ecfdf5;
+      --success-text: #065f46;
+      --alert-bg: #fef2f2;
+      --alert-text: #991b1b;
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-color); color: var(--text-main); margin: 0; padding: 32px 20px; }
     .container { max-width: 1100px; margin: 0 auto; }
-    h1, h2 { color: #1a1a1a; }
-    .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #edf2f7; }
-    th { background: #f8fafc; font-weight: 600; }
-    .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; }
-    .badge-alert { background: #fed7d7; color: #9b2c2c; }
-    .badge-ok { background: #c6f6d5; color: #22543d; }
-    button { background: #2b6cb0; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
-    button:hover { background: #2c5282; }
-    input[type="password"], input[type="text"] { padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; width: 280px; }
-    #auth-screen { text-align: center; margin-top: 100px; }
+    
+    header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+    .subtitle { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+    h1 { font-size: 2rem; margin: 0; color: var(--text-main); font-weight: 700; }
+    
+    .header-actions { display: flex; gap: 12px; align-items: center; }
+    .btn-link { text-decoration: none; color: var(--accent); font-weight: 600; font-size: 0.95rem; padding: 8px 16px; border: 1px solid var(--accent); border-radius: 6px; transition: all 0.2s; background: #fff; }
+    .btn-link:hover { background: var(--accent); color: #fff; }
+    
+    .card { background: var(--card-bg); border-radius: 12px; padding: 24px; margin-bottom: 28px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02); border: 1px solid var(--border); }
+    h2 { font-size: 1.25rem; margin-top: 0; margin-bottom: 20px; color: var(--text-main); }
+
+    /* Product Management Grid */
+    .product-grid { display: grid; gap: 20px; }
+    .product-row-card { border: 1px solid var(--border); border-radius: 8px; padding: 20px; background: #fafaf9; }
+    .product-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .product-name { font-weight: 700; font-size: 1.1rem; }
+    
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat-box { background: #fff; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+    .stat-value { font-size: 1.25rem; font-weight: 700; margin-top: 4px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 16px; align-items: flex-end; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 0.95rem; background: #fff; }
+    
+    button.btn-primary { background: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; font-family: inherit; }
+    button.btn-primary:hover { background: var(--accent-hover); }
+
+    /* Orders Table */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; }
+    th, td { text-align: left; padding: 14px 12px; border-bottom: 1px solid var(--border); }
+    th { background: #f5f5f4; font-weight: 600; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
+    
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; display: inline-block; }
+    .badge-ok { background: var(--success-bg); color: var(--success-text); }
+    .badge-alert { background: var(--alert-bg); color: var(--alert-text); }
+    
+    .loading { text-align: center; padding: 40px; color: var(--text-muted); font-weight: 500; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <!-- Auth Screen -->
-  <div id="auth-screen" class="card">
-    <h2>Connexion Espace Gestionnaire</h2>
-    <p>Veuillez saisir la clé SUPABASE_ANON_KEY pour charger l'interface.</p>
-
-    <div style="margin: 20px 0;">
-      <input type="password" id="anon-key" placeholder="Paster votre SUPABASE_ANON_KEY ici">
-      <button onclick="login()">Se connecter</button>
+  <header>
+    <div>
+      <div class="subtitle">Pilotage 2026</div>
+      <h1>Espace Gestionnaire · Stocks & Commandes</h1>
     </div>
+    <div class="header-actions">
+      <a href="index.html" class="btn-link">Voir le site</a>
+      <button class="btn-link" onclick="loadData()" style="cursor: pointer;">Actualiser</button>
+    </div>
+  </header>
+
+  <!-- Stock Management Section -->
+  <div class="card">
+    <h2>Gestion des Stocks & Produits</h2>
+    <div id="products-container" class="loading">Chargement des produits...</div>
   </div>
 
-  <!-- Dashboard Main Content -->
-  <div id="dashboard" style="display: none;">
-    <h1>Tableau de bord · Commandes & Stocks</h1>
-    
-    <div class="card">
-      <h2>État des Stocks & Réservations</h2>
+  <!-- Orders Section -->
+  <div class="card">
+    <h2>Dernières Commandes Enregistrées</h2>
+    <div style="overflow-x: auto;">
       <table>
         <thead>
           <tr>
-            <th>Produit</th>
-            <th>Capacité Totale</th>
-            <th>Réservés (Payés)</th>
-            <th>Disponible</th>
-            <th>Alerte (<= 5)</th>
-          </tr>
-        </thead>
-        <tbody id="stock-rows"></tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <h2>Dernières Commandes</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
+            <th>#ID</th>
             <th>Date</th>
             <th>Client</th>
             <th>Email</th>
@@ -71,64 +101,136 @@
             <th>Statut</th>
           </tr>
         </thead>
-        <tbody id="order-rows"></tbody>
+        <tbody id="order-rows">
+          <tr><td colspan="8" class="loading">Chargement des commandes...</td></tr>
+        </tbody>
       </table>
     </div>
   </div>
 </div>
 
 <script>
-  let supabaseClient = null;
-
-  function login() {
-    const anonKey = document.getElementById('anon-key').value.trim();
-    if (!anonKey) return alert('Veuillez entrer la clé ANON.');
-
-    // URL from Supabase project
-    const supabaseUrl = 'https://uopyugjckbwvsxqurhwg.supabase.co';
-    supabaseClient = supabase.createClient(supabaseUrl, anonKey);
-
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-
-    loadData();
-  }
+  const SUPABASE_URL = 'https://uopyugjckbwvsxqurhwg.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvcHl1Z2pja2J3dnNxcXVyaHdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg0MjgwMDAsImV4cCI6MjM5MDM3MjgyOH0.Q1d7W7a2X9s8v6m5n4b3v2c1x0z9l8k7j6h5g4f3e2d1'; 
+  
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   async function loadData() {
-    if (!supabaseClient) return;
+    await Promise.all([fetchProducts(), fetchOrders()]);
+  }
 
-    // Fetch Products
-    const { data: products, error: prodErr } = await supabaseClient.from('products').select('*');
-    if (prodErr) console.error(prodErr);
-    else renderProducts(products || []);
+  async function fetchProducts() {
+    const { data: products, error } = await supabaseClient.from('products').select('*');
+    if (error) {
+      console.error('Error fetching products:', error);
+      document.getElementById('products-container').innerHTML = '<div class="loading" style="color:red;">Erreur de chargement des stocks.</div>';
+      return;
+    }
+    renderProducts(products || []);
+  }
 
-    // Fetch Orders
-    const { data: orders, error: ordErr } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
-    if (ordErr) console.error(ordErr);
-    else renderOrders(orders || []);
+  async function fetchOrders() {
+    const { data: orders, error } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
+    if (error) {
+      console.error('Error fetching orders:', error);
+      return;
+    }
+    renderOrders(orders || []);
   }
 
   function renderProducts(products) {
-    const container = document.getElementById('stock-rows');
-    container.innerHTML = products.map(p => {
-      const remaining = (p.stock_total || 50) - (p.reserved || 0);
-      const isLow = remaining <= (p.alert_threshold || 5);
+    const container = document.getElementById('products-container');
+    if (products.length === 0) {
+      container.innerHTML = '<div class="loading">Aucun produit trouvé dans la base de données.</div>';
+      return;
+    }
+
+    container.innerHTML = `<div class="product-grid">` + products.map(p => {
+      const stockTotal = p.stock_total || 50;
+      const reserved = p.reserved || 0;
+      const available = stockTotal - reserved;
+      const threshold = p.alert_threshold || 5;
+      const isLow = available <= threshold;
+      const status = p.status || 'Ouverte';
+
       return `
-        <tr>
-          <td><strong>${p.name}</strong></td>
-          <td>${p.stock_total || 50}</td>
-          <td>${p.reserved || 0}</td>
-          <td><strong>${remaining}</strong></td>
-          <td><span class="badge ${isLow ? 'badge-alert' : 'badge-ok'}">${isLow ? 'STOCK BAS' : 'OK'}</span></td>
-        </tr>
+        <div class="product-row-card">
+          <div class="product-header">
+            <span class="product-name">${p.name}</span>
+            <span class="badge ${isLow ? 'badge-alert' : 'badge-ok'}">${isLow ? 'STOCK BAS (' + available + ')' : 'DISPONIBLE (' + available + ')'}</span>
+          </div>
+          
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-label">Capacité Totale</div>
+              <div class="stat-value">${stockTotal}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Réservés (Payés)</div>
+              <div class="stat-value">${reserved}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Disponible</div>
+              <div class="stat-value" style="color: ${available <= 0 ? '#991b1b' : 'inherit'};">${available}</div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Modifier Stock Total</label>
+              <input type="number" id="stock_${p.id}" value="${stockTotal}" min="0">
+            </div>
+            <div class="form-group">
+              <label>Seuil d'alerte</label>
+              <input type="number" id="threshold_${p.id}" value="${threshold}" min="0">
+            </div>
+            <div class="form-group">
+              <label>Statut Vente</label>
+              <select id="status_${p.id}">
+                <option value="Ouverte" ${status === 'Ouverte' ? 'selected' : ''}>Ouverte</option>
+                <option value="Fermée" ${status === 'Fermée' ? 'selected' : ''}>Fermée</option>
+              </select>
+            </div>
+            <div>
+              <button class="btn-primary" onclick="updateProduct('${p.id}')">Enregistrer</button>
+            </div>
+          </div>
+        </div>
       `;
-    }).join('');
+    }).join('') + `</div>`;
+  }
+
+  async function updateProduct(id) {
+    const newStock = parseInt(document.getElementById(`stock_${id}`).value);
+    const newThreshold = parseInt(document.getElementById(`threshold_${id}`).value);
+    const newStatus = document.getElementById(`status_${id}`).value;
+
+    if (isNaN(newStock) || isNaN(newThreshold)) {
+      alert('Veuillez entrer des valeurs numériques valides.');
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from('products')
+      .update({ 
+        stock_total: newStock, 
+        alert_threshold: newThreshold,
+        status: newStatus 
+      })
+      .eq('id', id);
+
+    if (error) {
+      alert('Erreur lors de la mise à jour : ' + error.message);
+    } else {
+      alert('Modifications enregistrées avec succès !');
+      loadData();
+    }
   }
 
   function renderOrders(orders) {
     const container = document.getElementById('order-rows');
     if (orders.length === 0) {
-      container.innerHTML = '<tr><td colspan="8">Aucune commande enregistrée pour le moment.</td></tr>';
+      container.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--text-muted);">Aucune commande enregistrée pour le moment.</td></tr>';
       return;
     }
     container.innerHTML = orders.map(o => {
@@ -136,18 +238,20 @@
       const date = new Date(o.created_at).toLocaleString('fr-FR');
       return `
         <tr>
-          <td>${o.id}</td>
+          <td>#${o.id}</td>
           <td>${date}</td>
           <td><strong>${o.customer_name || '-'}</strong></td>
           <td>${o.customer_email || '-'}</td>
           <td>${o.customer_phone || '-'}</td>
-          <td>${o.total_amount ? o.total_amount.toFixed(2) + ' €' : '-'}</td>
+          <td><strong>${o.total_amount ? o.total_amount.toFixed(2) + ' €' : '-'}</strong></td>
           <td>${itemsList}</td>
-          <td><span class="badge badge-ok">${o.status}</span></td>
+          <td><span class="badge badge-ok">${o.status || 'Confirmée'}</span></td>
         </tr>
       `;
     }).join('');
   }
+
+  loadData();
 </script>
 </body>
 </html>
