@@ -34,7 +34,9 @@
     .card { background: var(--card-bg); border-radius: 12px; padding: 24px; margin-bottom: 28px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02); border: 1px solid var(--border); }
     h2 { font-size: 1.25rem; margin-top: 0; margin-bottom: 20px; color: var(--text-main); }
 
-    /* Product Management Grid */
+    .key-bar { display: flex; gap: 12px; align-items: center; background: #f5f5f4; padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; border: 1px solid var(--border); }
+    .key-bar input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-family: monospace; font-size: 0.85rem; }
+
     .product-grid { display: grid; gap: 20px; }
     .product-row-card { border: 1px solid var(--border); border-radius: 8px; padding: 20px; background: #fafaf9; }
     .product-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
@@ -52,7 +54,6 @@
     button.btn-primary { background: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; font-family: inherit; }
     button.btn-primary:hover { background: var(--accent-hover); }
 
-    /* Orders Table */
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; }
     th, td { text-align: left; padding: 14px 12px; border-bottom: 1px solid var(--border); }
     th { background: #f5f5f4; font-weight: 600; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
@@ -78,10 +79,17 @@
     </div>
   </header>
 
+  <!-- Key Configuration Bar -->
+  <div class="key-bar">
+    <span style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Clé Supabase Anon :</span>
+    <input type="password" id="anon-key-input" placeholder="Coller votre SUPABASE_ANON_KEY ici pour déverrouiller">
+    <button class="btn-primary" onclick="initAndLoad()">Connexion</button>
+  </div>
+
   <!-- Stock Management Section -->
   <div class="card">
     <h2>Gestion des Stocks & Produits</h2>
-    <div id="products-container" class="loading">Chargement des produits...</div>
+    <div id="products-container" class="loading">Saisissez votre clé ci-dessus pour charger les données...</div>
   </div>
 
   <!-- Orders Section -->
@@ -102,7 +110,7 @@
           </tr>
         </thead>
         <tbody id="order-rows">
-          <tr><td colspan="8" class="loading">Chargement des commandes...</td></tr>
+          <tr><td colspan="8" class="loading">En attente de connexion...</td></tr>
         </tbody>
       </table>
     </div>
@@ -111,11 +119,29 @@
 
 <script>
   const SUPABASE_URL = 'https://uopyugjckbwvsxqurhwg.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvcHl1Z2pja2J3dnNxcXVyaHdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg0MjgwMDAsImV4cCI6MjM5MDM3MjgyOH0.Q1d7W7a2X9s8v6m5n4b3v2c1x0z9l8k7j6h5g4f3e2d1'; 
-  
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let supabaseClient = null;
+
+  // Try retrieving saved key from localStorage automatically
+  const savedKey = localStorage.getItem('supabase_anon_key');
+  if (savedKey) {
+    document.getElementById('anon-key-input').value = savedKey;
+    initAndLoad();
+  }
+
+  function initAndLoad() {
+    const key = document.getElementById('anon-key-input').value.trim();
+    if (!key) {
+      alert('Veuillez coller votre clé SUPABASE_ANON_KEY.');
+      return;
+    }
+
+    localStorage.setItem('supabase_anon_key', key);
+    supabaseClient = supabase.createClient(SUPABASE_URL, key);
+    loadData();
+  }
 
   async function loadData() {
+    if (!supabaseClient) return;
     await Promise.all([fetchProducts(), fetchOrders()]);
   }
 
@@ -250,8 +276,6 @@
       `;
     }).join('');
   }
-
-  loadData();
 </script>
 </body>
 </html>
