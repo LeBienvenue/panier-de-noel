@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Espace Gestionnaire - Paniers de Noël</title>
+    <title>Back-office des Paniers de Noël</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #f4f6f8; color: #333; }
@@ -14,7 +14,6 @@
         .tab-content { display: none; padding: 25px; max-width: 1200px; margin: auto; }
         .tab-content.active { display: block; }
         
-        /* Cards & Tables */
         .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .order-card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); border-left: 5px solid #3498db; }
         .order-card.nouvelle { border-left-color: #f39c12; }
@@ -26,10 +25,10 @@
         .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .badge { padding: 4px 10px; border-radius: 4px; font-size: 0.85em; font-weight: bold; background: #eee; color: #333; }
         .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px; }
-        .form-group { display: flex; flexDirection: column; gap: 5px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
         label { font-size: 0.85em; font-weight: bold; color: #555; }
         select, input, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9em; width: 100%; box-sizing: border-box; }
-        button.save-btn { background: #e67e22; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button.save-btn { background: #e67e22; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         button.save-btn:hover { background: #d35400; }
         button.primary-btn { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         
@@ -37,7 +36,6 @@
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; font-weight: bold; color: #333; }
         
-        /* Modal */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
         .modal-content { background: #fff; padding: 30px; border-radius: 8px; width: 500px; max-height: 90vh; overflow-y: auto; }
     </style>
@@ -45,7 +43,7 @@
 <body>
 
     <header>
-        <h1>Ty Larzul — Espace Gestionnaire</h1>
+        <h1>Back-office des Paniers de Noël</h1>
         <button class="primary-btn" onclick="openModal()">+ Nouvelle Réservation (Walk-in)</button>
     </header>
 
@@ -106,7 +104,7 @@
         </table>
     </div>
 
-    <!-- MANUAL ORDER MODAL -->
+    <!-- MODAL WALK-IN -->
     <div id="orderModal" class="modal">
         <div class="modal-content">
             <h2>Ajouter une Réservation (Walk-in)</h2>
@@ -124,7 +122,7 @@
                     <input type="text" id="m_phone" placeholder="06...">
                 </div>
                 <div class="form-group" style="margin-bottom: 12px;">
-                    <label>Articles (ex: Panier de Noël complet x1)</label>
+                    <label>Articles</label>
                     <textarea id="m_items" rows="3" required placeholder='[{"name": "Panier de Noël complet", "quantity": 1}]'></textarea>
                 </div>
                 <div class="form-group" style="margin-bottom: 12px;">
@@ -145,8 +143,10 @@
 
     <script>
         const SUPABASE_URL = 'https://uopyugjckbwvsxqurhwg.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvcHl1Z2pja2J3dnN4cXVyaHdnIiwicm9sZSI6ImFub24iLCJpYXQiOjV9...'; // Replace with valid anon key if needed
-        const supabaseClient = supabase.createClient('https://uopyugjckbwvsxqurhwg.supabase.co', 'YOUR_SUPABASE_ANON_KEY'); // Note: ensure valid key is set here
+        // PASTE YOUR PUBLISHABLE KEY COPIED FROM SUPABASE BELOW INSIDE THE SINGLE QUOTES
+        const SUPABASE_ANON_KEY = 'sb_publishable_-5_GHObdmQBviGpwLhb9fA_GC2mmSj5'; 
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let allOrders = [];
 
@@ -223,7 +223,7 @@
                         <div class="grid-4" style="background:#f8f9fa; padding:12px; border-radius:6px;">
                             <div class="form-group">
                                 <label>Commande</label>
-                                <select id="status_${order.id}" onchange="updateOrderStatus('${order.id}')">
+                                <select id="status_${order.id}">
                                     <option value="Nouvelle" ${order.status === 'Nouvelle' ? 'selected' : ''}>Nouvelle</option>
                                     <option value="Confirmée" ${order.status === 'Confirmée' ? 'selected' : ''}>Confirmée</option>
                                     <option value="Prête" ${order.status === 'Prête' ? 'selected' : ''}>Prête</option>
@@ -233,7 +233,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Production</label>
-                                <select id="prod_${order.id}" onchange="updateOrderStatus('${order.id}')">
+                                <select id="prod_${order.id}">
                                     <option value="À préparer" ${order.production_status === 'À préparer' ? 'selected' : ''}>À préparer</option>
                                     <option value="En cours" ${order.production_status === 'En cours' ? 'selected' : ''}>En cours</option>
                                     <option value="Terminé" ${order.production_status === 'Terminé' ? 'selected' : ''}>Terminé</option>
@@ -241,7 +241,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Règlement</label>
-                                <select id="pay_${order.id}" onchange="updateOrderStatus('${order.id}')">
+                                <select id="pay_${order.id}">
                                     <option value="À régler" ${order.payment_status === 'À régler' ? 'selected' : ''}>À régler</option>
                                     <option value="Payé" ${order.payment_status === 'Payé' ? 'selected' : ''}>Payé</option>
                                 </select>
@@ -253,10 +253,6 @@
                     </div>
                 `;
             }).join('');
-        }
-
-        async function updateOrderStatus(id) {
-            // Auto-save dropdown changes instantly or wait for save button
         }
 
         async function saveOrderDetails(id) {
