@@ -33,7 +33,6 @@ export default async function handler(req, res) {
       notes: notes,
       status: 'Nouvelle'
     }]);
-    }]);
 
     if (orderError) {
       console.error('Error recording order:', orderError);
