@@ -138,15 +138,15 @@
                                 <label style="font-size:0.75em;">Produit</label>
                                 <select class="item-select" onchange="updateWalkInPrice()" required>
                                     <option value="" disabled selected>Sélectionner...</option>
-                                    <option value="Panier de Noël complet · grand format" data-price="110">Panier de Noël complet · grand format (110,00 €)</option>
-                                    <option value="Panier de Noël complet · petit format" data-price="55">Panier de Noël complet · petit format (55,00 €)</option>
-                                    <option value="Foie gras de canard IGP Sud-Ouest Label Rouge · 500 g" data-price="65">Foie gras de canard · 500 g (65,00 €)</option>
-                                    <option value="Gravlax de saumon Label Rouge · 500 g" data-price="45">Gravlax de saumon · 500 g (45,00 €)</option>
-                                    <option value="Gravlax de saumon Label Rouge · 250 g" data-price="22.5">Gravlax de saumon · 250 g (22,50 €)</option>
-                                    <option value="Chutney de figues · 150 g" data-price="6">Chutney de figues · 150 g (6,00 €)</option>
-                                    <option value="Chutney de figues · 75 g" data-price="3">Chutney de figues · 75 g (3,00 €)</option>
-                                    <option value="Pain d'épices du Kervao · 250 g" data-price="7">Pain d'épices du Kervao · 250 g (7,00 €)</option>
-                                    <option value="Pain d'épices du Kervao · 125 g" data-price="3.5">Pain d'épices du Kervao · 125 g (3,50 €)</option>
+                                    <option value="Panier de Noël complet • Grand Format" data-price="110">Panier de Noël complet • Grand Format (110,00 €)</option>
+                                    <option value="Panier de Noël complet • Petit Format" data-price="55">Panier de Noël complet • Petit Format (55,00 €)</option>
+                                    <option value="Foie gras de canard" data-price="65">Foie gras de canard (65,00 €)</option>
+                                    <option value="Gravlax de saumon • Grand Format" data-price="45">Gravlax de saumon • Grand Format (45,00 €)</option>
+                                    <option value="Gravlax de saumon • Petit Format" data-price="22.5">Gravlax de saumon • Petit Format (22,50 €)</option>
+                                    <option value="Chutney de figues • Grand Format" data-price="6">Chutney de figues • Grand Format (6,00 €)</option>
+                                    <option value="Chutney de figues • Petit Format" data-price="3">Chutney de figues • Petit Format (3,00 €)</option>
+                                    <option value="Pain d’épices • Grand Format" data-price="7">Pain d’épices • Grand Format (7,00 €)</option>
+                                    <option value="Pain d’épices • Petit Format" data-price="3.5">Pain d’épices • Petit Format (3,50 €)</option>
                                 </select>
                             </div>
                             <div style="flex: 1;">
@@ -192,27 +192,17 @@
 
         let allOrders = [];
 
-        // Official Catalog matching website names, descriptions, and weights
+        // Exact 9-item production catalog sequence
         const officialCatalog = [
-            { name: "Panier de Noël complet", desc: "500 g foie gras · 500 g gravelax · 250 g pain d'épices · 150 g chutney" },
-            { name: "Panier de Noël complet — demi-format", desc: "250 g foie gras · 250 g gravelax · 125 g pain d'épices · 75 g chutney" },
-            { name: "Gravlax de saumon Label Rouge — origine Écosse", desc: "Origine Écosse · saumure au sel de Guérande · 500 g" },
-            { name: "Gravlax de saumon Label Rouge — origine Écosse, demi-portion", desc: "Origine Écosse · saumure au sel de Guérande · 250 g" },
-            { name: "Foie gras de canard IGP Sud-Ouest Label Rouge", desc: "IGP Sud-Ouest · Label Rouge · 500 g" },
-            { name: "Chutney de figues de tous !", desc: "Figues & vinaigre de cidre · 150 g" },
-            { name: "Chutney de figues de tous ! — demi-portion", desc: "Figues & vinaigre de cidre · 75 g" },
-            { name: "Pain d'épices du Kervao", desc: "Recette au beurre · 250 g" },
-            { name: "Pain d'épices du Kervao — demi-portion", desc: "Recette au beurre · 125 g" },
-            // Also include legacy/walk-in names for compatibility matching
-            { name: "Panier de Noël complet · grand format", desc: "Grand format complet" },
-            { name: "Panier de Noël complet · petit format", desc: "Petit format complet" },
-            { name: "Foie gras de canard IGP Sud-Ouest Label Rouge · 500 g", desc: "IGP Sud-Ouest · Label Rouge · 500 g" },
-            { name: "Gravlax de saumon Label Rouge · 500 g", desc: "Label Rouge · 500 g" },
-            { name: "Gravlax de saumon Label Rouge · 250 g", desc: "Label Rouge · 250 g" },
-            { name: "Chutney de figues · 150 g", desc: "150 g" },
-            { name: "Chutney de figues · 75 g", desc: "75 g" },
-            { name: "Pain d'épices du Kervao · 250 g", desc: "250 g" },
-            { name: "Pain d'épices du Kervao · 125 g", desc: "125 g" }
+            { name: "Panier de Noël complet • Grand Format", desc: "500 g foie gras, 500 g gravlax, 250 g pain d’épices, 150 g chutney." },
+            { name: "Panier de Noël complet • Petit Format", desc: "250 g foie gras, 250 g gravlax, 125 g pain d’épices, 75 g chutney." },
+            { name: "Gravlax de saumon • Grand Format", desc: "500 g." },
+            { name: "Gravlax de saumon • Petit Format", desc: "250 g." },
+            { name: "Foie gras de canard", desc: "500 g." },
+            { name: "Chutney de figues • Grand Format", desc: "150 g." },
+            { name: "Chutney de figues • Petit Format", desc: "75 g." },
+            { name: "Pain d’épices • Grand Format", desc: "250 g." },
+            { name: "Pain d’épices • Petit Format", desc: "125 g." }
         ];
 
         function switchTab(tabId) {
@@ -255,15 +245,15 @@
                     <label style="font-size:0.75em;">Produit</label>
                     <select class="item-select" onchange="updateWalkInPrice()" required>
                         <option value="" disabled selected>Sélectionner...</option>
-                        <option value="Panier de Noël complet · grand format" data-price="110">Panier de Noël complet · grand format (110,00 €)</option>
-                        <option value="Panier de Noël complet · petit format" data-price="55">Panier de Noël complet · petit format (55,00 €)</option>
-                        <option value="Foie gras de canard IGP Sud-Ouest Label Rouge · 500 g" data-price="65">Foie gras de canard · 500 g (65,00 €)</option>
-                        <option value="Gravlax de saumon Label Rouge · 500 g" data-price="45">Gravlax de saumon · 500 g (45,00 €)</option>
-                        <option value="Gravlax de saumon Label Rouge · 250 g" data-price="22.5">Gravlax de saumon · 250 g (22,50 €)</option>
-                        <option value="Chutney de figues · 150 g" data-price="6">Chutney de figues · 150 g (6,00 €)</option>
-                        <option value="Chutney de figues · 75 g" data-price="3">Chutney de figues · 75 g (3,00 €)</option>
-                        <option value="Pain d'épices du Kervao · 250 g" data-price="7">Pain d'épices du Kervao · 250 g (7,00 €)</option>
-                        <option value="Pain d'épices du Kervao · 125 g" data-price="3.5">Pain d'épices du Kervao · 125 g (3,50 €)</option>
+                        <option value="Panier de Noël complet • Grand Format" data-price="110">Panier de Noël complet • Grand Format (110,00 €)</option>
+                        <option value="Panier de Noël complet • Petit Format" data-price="55">Panier de Noël complet • Petit Format (55,00 €)</option>
+                        <option value="Foie gras de canard" data-price="65">Foie gras de canard (65,00 €)</option>
+                        <option value="Gravlax de saumon • Grand Format" data-price="45">Gravlax de saumon • Grand Format (45,00 €)</option>
+                        <option value="Gravlax de saumon • Petit Format" data-price="22.5">Gravlax de saumon • Petit Format (22,50 €)</option>
+                        <option value="Chutney de figues • Grand Format" data-price="6">Chutney de figues • Grand Format (6,00 €)</option>
+                        <option value="Chutney de figues • Petit Format" data-price="3">Chutney de figues • Petit Format (3,00 €)</option>
+                        <option value="Pain d’épices • Grand Format" data-price="7">Pain d’épices • Grand Format (7,00 €)</option>
+                        <option value="Pain d’épices • Petit Format" data-price="3.5">Pain d’épices • Petit Format (3,50 €)</option>
                     </select>
                 </div>
                 <div style="flex: 1;">
@@ -463,15 +453,15 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ items: items.map(i => {
                             const catalogKeyMap = {
-                                'Panier de Noël complet · grand format': 'panier-g',
-                                'Panier de Noël complet · petit format': 'panier-p',
-                                'Foie gras de canard IGP Sud-Ouest Label Rouge · 500 g': 'foie-g',
-                                'Gravlax de saumon Label Rouge · 500 g': 'gravlax-g',
-                                'Gravlax de saumon Label Rouge · 250 g': 'gravlax-p',
-                                'Chutney de figues · 150 g': 'chutney-g',
-                                'Chutney de figues · 75 g': 'chutney-p',
-                                "Pain d'épices du Kervao · 250 g": 'pain-g',
-                                "Pain d'épices du Kervao · 125 g": 'pain-p'
+                                'Panier de Noël complet • Grand Format': 'panier-g',
+                                'Panier de Noël complet • Petit Format': 'panier-p',
+                                'Foie gras de canard': 'foie-g',
+                                'Gravlax de saumon • Grand Format': 'gravlax-g',
+                                'Gravlax de saumon • Petit Format': 'gravlax-p',
+                                'Chutney de figues • Grand Format': 'chutney-g',
+                                'Chutney de figues • Petit Format': 'chutney-p',
+                                'Pain d’épices • Grand Format': 'pain-g',
+                                'Pain d’épices • Petit Format': 'pain-p'
                             };
                             return { id: catalogKeyMap[i.name] || 'panier-g', quantity: i.quantity };
                         }) })
@@ -540,11 +530,25 @@
                             let name = (i.name || i.title || '').trim();
                             const qty = i.quantity || 1;
 
-                            // Normalize names to match catalog
-                            if (name.includes('grand format') || name.includes('Panier de Noël complet · grand format')) {
-                                name = 'Panier de Noël complet';
-                            } else if (name.includes('petit format') || name.includes('Panier de Noël complet · petit format')) {
-                                name = 'Panier de Noël complet — demi-format';
+                            // Map older/legacy item names to the new exact catalog names
+                            if (name.includes('grand format') && name.includes('Panier')) {
+                                name = 'Panier de Noël complet • Grand Format';
+                            } else if (name.includes('petit format') && name.includes('Panier')) {
+                                name = 'Panier de Noël complet • Petit Format';
+                            } else if (name.includes('Foie gras') || name.includes('foie gras')) {
+                                name = 'Foie gras de canard';
+                            } else if (name.includes('Gravlax') && name.includes('500')) {
+                                name = 'Gravlax de saumon • Grand Format';
+                            } else if (name.includes('Gravlax') && name.includes('250')) {
+                                name = 'Gravlax de saumon • Petit Format';
+                            } else if (name.includes('Chutney') && name.includes('150')) {
+                                name = 'Chutney de figues • Grand Format';
+                            } else if (name.includes('Chutney') && name.includes('75')) {
+                                name = 'Chutney de figues • Petit Format';
+                            } else if (name.includes("Pain d'épices") && name.includes('250')) {
+                                name = 'Pain d’épices • Grand Format';
+                            } else if (name.includes("Pain d'épices") && name.includes('125')) {
+                                name = 'Pain d’épices • Petit Format';
                             }
 
                             counts[name] = (counts[name] || 0) + qty;
@@ -553,7 +557,7 @@
                 } catch(e) {}
             });
 
-            // Render every single item from the official catalog with description and count
+            // Render exact 9-item catalog sequence with descriptions and counts
             tbody.innerHTML = officialCatalog.map(prod => {
                 const totalQty = counts[prod.name] || 0;
                 return `
