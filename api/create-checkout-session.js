@@ -41,6 +41,15 @@ module.exports = async (req, res) => {
       allow_promotion_codes: true,
       line_items,
       phone_number_collection: { enabled: true },
+      billing_address_collection: 'required',
+    custom_fields: [
+        {
+            key: 'customer_notes',
+            label: { type: 'custom', custom: 'Notes ou allergies (facultatif)' },
+            type: 'text',
+            optional: true
+        }
+    ],
       custom_text: {
         submit: { message: 'Retrait le 23 décembre 2026 de 9h à 18h, Restaurant Le Kervao, 234 avenue de Ty Bos, 29000 Quimper. Merci de présenter votre e-mail de confirmation.' }
       },
