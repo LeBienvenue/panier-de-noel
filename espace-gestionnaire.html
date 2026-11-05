@@ -17,13 +17,21 @@
         .card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .order-card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); border-left: 5px solid #3498db; }
         .order-card.nouvelle { border-left-color: #f39c12; }
-        .order-card.confirmee { border-left-color: #27ae60; }
-        .order-card.prete { border-left-color: #2980b9; }
-        .order-card.retiree { border-left-color: #7f8c8d; }
-        .order-card.annulee { border-left-color: #c0392b; }
+        .order-card.confirmee { border-left-color: #3498db; }
+        .order-card.prete { border-left-color: #27ae60; }
+        .order-card.retiree { border-left-color: #e74c3c; }
+        .order-card.annulee { border-left-color: #8e44ad; }
 
-        .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
         .badge { padding: 4px 10px; border-radius: 4px; font-size: 0.85em; font-weight: bold; background: #eee; color: #333; }
+        
+        /* Status badge colors */
+        .status-nouvelle { background: #f39c12; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        .status-confirmee { background: #3498db; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        .status-prete { background: #27ae60; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        .status-retiree { background: #e74c3c; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        .status-annulee { background: #8e44ad; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+
         .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px; }
         .form-group { display: flex; flex-direction: column; gap: 5px; }
         label { font-size: 0.85em; font-weight: bold; color: #555; }
@@ -123,7 +131,6 @@
                     <input type="text" id="m_phone" placeholder="06...">
                 </div>
 
-                <!-- DYNAMIC ITEMS CONTAINER -->
                 <div class="form-group" style="margin-bottom: 10px;">
                     <label>Articles de la commande</label>
                     <div id="items-container">
@@ -297,21 +304,39 @@
                     }
                 } catch(e) { itemsList = 'Détails indisponibles'; }
 
-                const statusClass = (order.status || 'nouvelle').toLowerCase();
+                const statusVal = order.status || 'Nouvelle';
+                const statusClass = statusVal.toLowerCase();
+                const isMinimized = statusVal === 'Retirée' || statusVal === 'Annulée';
+
+                // Map status to correct badge CSS class
+                let badgeClass = 'status-nouvelle';
+                if (statusVal === 'Confirmée') badgeClass = 'status-confirmee';
+                if (statusVal === 'Prête') badgeClass = 'status-prete';
+                if (statusVal === 'Retirée') badgeClass = 'status-retiree';
+                if (statusVal === 'Annulée') badgeClass = 'status-annulee';
 
                 return `
-                    <div class="order-card ${statusClass}">
+                    <div class="order-card ${statusClass}" style="${isMinimized ? 'padding: 12px 20px; opacity: 0.85;' : ''}">
                         <div class="order-header">
                             <div>
-                                <strong>${order.customer_name || 'Client Walk-in'}</strong> 
+                                <div style="margin-bottom: 4px;">
+                                    <span class="${badgeClass}">${statusVal}</span>
+                                </div>
+                                <strong style="font-size: 1.1em;">${order.customer_name || 'Client Walk-in'}</strong> 
                                 <span style="color:#777; font-size:0.85em;">(${new Date(order.created_at).toLocaleString()})</span>
                             </div>
-                            <span class="badge">€${(order.total_amount || 0).toFixed(2)}</span>
+                            <div style="text-align: right;">
+                                <span class="badge">€${(order.total_amount || 0).toFixed(2)}</span>
+                                <div style="margin-top: 6px; font-size: 0.9em; font-weight: 500; color: #444; text-align: left;">
+                                    ${itemsList}
+                                </div>
+                            </div>
                         </div>
+
+                        ${isMinimized ? '' : `
                         <div style="display:grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 15px;">
                             <div>
                                 <p style="margin:2px 0;">📧 ${order.customer_email || 'Pas d\'email'} | 📞 ${order.customer_phone || 'Pas de téléphone'}</p>
-                                <p style="margin:5px 0; font-weight:500;">Articles :<br><span style="font-weight:normal; color:#555;">${itemsList}</span></p>
                                 ${order.notes ? `<div style="background:#fff3cd; padding:8px; border-radius:4px; margin-top:5px; font-size:0.9em;">⚠️ <strong>Notes/Allergies:</strong> ${order.notes}</div>` : ''}
                             </div>
                         </div>
@@ -345,6 +370,7 @@
                                 <button class="save-btn" style="margin-top:0; width:100%;" onclick="saveOrderDetails('${order.id}')">Enregistrer</button>
                             </div>
                         </div>
+                        `}
                     </div>
                 `;
             }).join('');
@@ -360,8 +386,12 @@
                 .update({ status, production_status, payment_status })
                 .eq('id', id);
 
-            if (error) alert('Erreur lors de la mise à jour : ' + error.message);
-            else alert('Modifications enregistrées !');
+            if (error) {
+                alert('Erreur lors de la mise à jour : ' + error.message);
+            } else {
+                alert('Modifications enregistrées !');
+                loadOrders(); // Refresh to immediately apply minimization if Retirée/Annulée was selected
+            }
         }
 
         async function saveManualOrder(e) {
