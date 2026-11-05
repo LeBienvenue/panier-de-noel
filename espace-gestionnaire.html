@@ -210,7 +210,6 @@
         }
         function closeModal() { document.getElementById('orderModal').style.display = 'none'; }
 
-        // Toggle expansion of minimized orders
         function toggleOrderCard(headerEl) {
             const card = headerEl.closest('.order-card');
             const details = card.querySelector('.order-details-body');
@@ -312,12 +311,14 @@
                 let itemsList = '';
                 try {
                     const parsed = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-                    if (Array.isArray(parsed)) {
+                    if (Array.isArray(parsed) && parsed.length > 0) {
                         itemsList = parsed.map(i => `${i.quantity || 1} × ${i.name || i.title || 'Article'}`).join('<br>');
                     } else {
-                        itemsList = JSON.stringify(order.items);
+                        itemsList = '<span style="color:#999; font-style:italic;">(Articles non spécifiés)</span>';
                     }
-                } catch(e) { itemsList = 'Détails indisponibles'; }
+                } catch(e) { 
+                    itemsList = '<span style="color:#999; font-style:italic;">(Articles non spécifiés)</span>'; 
+                }
 
                 const statusVal = order.status || 'Nouvelle';
                 const statusClass = statusVal.toLowerCase();
