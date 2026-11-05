@@ -102,14 +102,7 @@
     <!-- TAB 4: STOCKS -->
     <div id="stocks" class="tab-content">
         <h2>État des Stocks & Limites</h2>
-        <table>
-            <thead>
-                <tr><th>Produit</th><th>Stock Limite</th><th>Vendus / Réservés</th><th>Disponibilité</th></tr>
-            </thead>
-            <tbody id="stocks-table-body">
-                <tr><td colspan="4">Chargement...</td></tr>
-            </tbody>
-        </table>
+        <div id="stocks-container">Chargement des stocks...</div>
     </div>
 
     <!-- MODAL WALK-IN -->
@@ -192,17 +185,16 @@
 
         let allOrders = [];
 
-        // Exact 9-item production catalog sequence
         const officialCatalog = [
-            { name: "Panier de Noël complet • Grand Format", desc: "500 g foie gras, 500 g gravlax, 250 g pain d’épices, 150 g chutney." },
-            { name: "Panier de Noël complet • Petit Format", desc: "250 g foie gras, 250 g gravlax, 125 g pain d’épices, 75 g chutney." },
-            { name: "Gravlax de saumon • Grand Format", desc: "500 g." },
-            { name: "Gravlax de saumon • Petit Format", desc: "250 g." },
-            { name: "Foie gras de canard", desc: "500 g." },
-            { name: "Chutney de figues • Grand Format", desc: "150 g." },
-            { name: "Chutney de figues • Petit Format", desc: "75 g." },
-            { name: "Pain d’épices • Grand Format", desc: "250 g." },
-            { name: "Pain d’épices • Petit Format", desc: "125 g." }
+            { id: 'panier-g', name: "Panier de Noël complet • Grand Format", desc: "500 g foie gras, 500 g gravlax, 250 g pain d’épices, 150 g chutney." },
+            { id: 'panier-p', name: "Panier de Noël complet • Petit Format", desc: "250 g foie gras, 250 g gravlax, 125 g pain d’épices, 75 g chutney." },
+            { id: 'gravlax-g', name: "Gravlax de saumon • Grand Format", desc: "500 g." },
+            { id: 'gravlax-p', name: "Gravlax de saumon • Petit Format", desc: "250 g." },
+            { id: 'foie-g', name: "Foie gras de canard", desc: "500 g." },
+            { id: 'chutney-g', name: "Chutney de figues • Grand Format", desc: "150 g." },
+            { id: 'chutney-p', name: "Chutney de figues • Petit Format", desc: "75 g." },
+            { id: 'pain-g', name: "Pain d’épices • Grand Format", desc: "250 g." },
+            { id: 'pain-p', name: "Pain d’épices • Petit Format", desc: "125 g." }
         ];
 
         function switchTab(tabId) {
@@ -519,7 +511,6 @@
             const tbody = document.getElementById('production-table-body');
             const { data: orders } = await supabaseClient.from('orders').select('items, status');
             
-            // Tally quantities from active/confirmed orders (skip cancelled orders)
             let counts = {};
             (orders || []).forEach(o => {
                 if (o.status === 'Annulée') return;
@@ -530,7 +521,6 @@
                             let name = (i.name || i.title || '').trim();
                             const qty = i.quantity || 1;
 
-                            // Map older/legacy item names to the new exact catalog names
                             if (name.includes('grand format') && name.includes('Panier')) {
                                 name = 'Panier de Noël complet • Grand Format';
                             } else if (name.includes('petit format') && name.includes('Panier')) {
@@ -557,7 +547,6 @@
                 } catch(e) {}
             });
 
-            // Render exact 9-item catalog sequence with descriptions and counts
             tbody.innerHTML = officialCatalog.map(prod => {
                 const totalQty = counts[prod.name] || 0;
                 return `
@@ -577,22 +566,125 @@
         }
 
         async function loadStocks() {
-            const tbody = document.getElementById('stocks-table-body');
-            const { data, error } = await supabaseClient.from('products').select('*');
+            const container = document.getElementById('stocks-container');
+            container.innerHTML = '<p>Chargement...</p>';
 
-            if (error || !data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4">Aucun produit configuré.</td></tr>';
-                return;
+            // Fetch orders to calculate reserved quantities
+            const { data: orders } = await supabaseClient.from('orders').select('items, status');
+            let reservedCounts = {};
+            (orders || []).forEach(o => {
+                if (o.status === 'Annulée') return;
+                try {
+                    const items = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+                    if (Array.isArray(items)) {
+                        items.forEach(i => {
+                            let name = (i.name || i.title || '').trim();
+                            const qty = i.quantity || 1;
+                            if (name.includes('grand format') && name.includes('Panier')) name = 'Panier de Noël complet • Grand Format';
+                            else if (name.includes('petit format') && name.includes('Panier')) name = 'Panier de Noël complet • Petit Format';
+                            else if (name.includes('Foie gras') || name.includes('foie gras')) name = 'Foie gras de canard';
+                            else if (name.includes('Gravlax') && name.includes('500')) name = 'Gravlax de saumon • Grand Format';
+                            else if (name.includes('Gravlax') && name.includes('250')) name = 'Gravlax de saumon • Petit Format';
+                            else if (name.includes('Chutney') && name.includes('150')) name = 'Chutney de figues • Grand Format';
+                            else if (name.includes('Chutney') && name.includes('75')) name = 'Chutney de figues • Petit Format';
+                            else if (name.includes("Pain d'épices") && name.includes('250')) name = 'Pain d’épices • Grand Format';
+                            else if (name.includes("Pain d'épices") && name.includes('125')) name = 'Pain d’épices • Petit Format';
+
+                            reservedCounts[name] = (reservedCounts[name] || 0) + qty;
+                        });
+                    }
+                } catch(e) {}
+            });
+
+            // Fetch product settings from Supabase
+            const { data: products } = await supabaseClient.from('products').select('*');
+            let prodMap = {};
+            (products || []).forEach(p => { prodMap[p.id] = p; });
+
+            container.innerHTML = officialCatalog.map(prod => {
+                const dbProd = prodMap[prod.id] || {};
+                const stockLimit = dbProd.stock !== undefined ? dbProd.stock : 50;
+                const alertThreshold = dbProd.alert !== undefined ? dbProd.alert : 5;
+                const saleStatus = dbProd.status || 'Ouverte';
+                const reserved = reservedCounts[prod.name] || 0;
+                const disponible = Math.max(0, stockLimit - reserved);
+                const isAvailable = disponible > 0 && saleStatus === 'Ouverte';
+
+                return `
+                    <div class="card" style="margin-bottom: 25px; border-left: 5px solid ${isAvailable ? '#27ae60' : '#e74c3c'};">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                            <div>
+                                <h3 style="margin: 0 0 5px 0; font-size: 1.2em; color: #2c3e50;">${prod.name}</h3>
+                                <p style="margin: 0; font-size: 0.9em; color: #666;">${prod.desc}</p>
+                            </div>
+                            <div>
+                                <span class="badge" style="background: ${isAvailable ? '#27ae60' : '#e74c3c'}; color: white; padding: 6px 12px; font-size: 0.9em;">
+                                    ${isAvailable ? 'Disponible' : 'Épuisé / Fermé'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Top row boxes: Disponible first, then Réservé -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #eee;">
+                                <div style="font-size: 0.85em; color: #666; font-weight: bold;">Disponible</div>
+                                <div style="font-size: 1.8em; font-weight: bold; color: #27ae60; margin-top: 5px;">${disponible}</div>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #eee;">
+                                <div style="font-size: 0.85em; color: #666; font-weight: bold;">Réservé</div>
+                                <div style="font-size: 1.8em; font-weight: bold; color: #e67e22; margin-top: 5px;">${reserved}</div>
+                            </div>
+                        </div>
+
+                        <!-- Editable fields row -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="form-group">
+                                <label>Stock total</label>
+                                <input type="number" id="stock_${prod.id}" value="${stockLimit}" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Seuil d’alerte (Alerte à 5)</label>
+                                <input type="number" id="alert_${prod.id}" value="${alertThreshold}" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Vente</label>
+                                <select id="status_${prod.id}">
+                                    <option value="Ouverte" ${saleStatus === 'Ouverte' ? 'selected' : ''}>Ouverte</option>
+                                    <option value="Fermée" ${saleStatus === 'Fermée' ? 'selected' : ''}>Fermée</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: flex-end;">
+                            <button class="save-btn" onclick="saveStockItem('${prod.id}', '${prod.name}', ${disponible}, ${alertThreshold})">Enregistrer le stock</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function saveStockItem(id, name, disponible, alertThreshold) {
+            const stock = parseInt(document.getElementById(`stock_${id}`).value) || 50;
+            const alertVal = parseInt(document.getElementById(`alert_${id}`).value) || 5;
+            const status = document.getElementById(`status_${id}`).value;
+
+            // Check if alert threshold is reached (e.g. <= 5 remaining)
+            if (disponible <= alertVal) {
+                console.warn(`Alerte stock bas pour ${name}: ${disponible} restants.`);
+                // Note: Email notification dispatch can be integrated with a backend email service if desired.
             }
 
-            tbody.innerHTML = data.map(p => `
-                <tr>
-                    <td><strong>${p.name || p.title || 'Produit'}</strong></td>
-                    <td>${p.stock || 50} max</td>
-                    <td style="color:#e67e22; font-weight:bold;">${p.reserved || 0} vendus</td>
-                    <td><span class="badge" style="background:#27ae60; color:#fff;">Actif</span></td>
-                </tr>
-            `).join('');
+            // Upsert product settings into Supabase 'products' table
+            const { error } = await supabaseClient
+                .from('products')
+                .upsert([{ id, name, stock, alert: alertVal, status }]);
+
+            if (error) {
+                alert('Erreur lors de l\'enregistrement : ' + error.message);
+            } else {
+                alert('Stock mis à jour avec succès !');
+                loadStocks();
+            }
         }
 
         // Initial load
