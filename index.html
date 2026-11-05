@@ -520,10 +520,78 @@
     $('thanks').classList.remove('hidden');
     history.replaceState(null, '', location.pathname + location.hash);
   }
-  renderCart();
-</script>
-  <!-- Script d'inactivation automatique des produits Fermés -->
+ 523      renderCart();
+524  </script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+async function updateStorefrontAvailability() {
+    try {
+        const SUPABASE_URL = 'https://uopyugjckbwvsxqurhwg.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_-5_GHObdmQBviGpwLhb9fA_GC2mmSj5';
+        
+        // Ensure Supabase is available
+        if (typeof supabase === 'undefined') return;
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const { data: products } = await client.from('products').select('id, status');
+        if (!products) return;
+
+        // Map product IDs to search terms
+        const idKeywords = {
+            'panier-g': 'Grand Format',
+            'panier-p': 'Petit Format',
+            'foie-g': 'Foie gras',
+            'gravlax-g': 'Gravlax',
+            'gravlax-p': 'Gravlax',
+            'chutney-g': 'Chutney',
+            'chutney-p': 'Chutney',
+            'pain-g': 'Pain',
+            'pain-p': 'Pain'
+        };
+
+        const closedProducts = products.filter(p => p.status === 'Fermée').map(p => p.id);
+        if (closedProducts.length === 0) return;
+
+        // Find buttons across all product cards and disable closed ones
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(btn => {
+            const container = btn.closest('div') || btn.parentElement;
+            if (!container) return;
+            const text = container.textContent || '';
+
+            closedProducts.forEach(id => {
+                // Match items based on name text inside the card
+                if (id === 'panier-g' && text.includes('Panier') && text.includes('Grand')) disableBtn(btn, container);
+                if (id === 'panier-p' && text.includes('Panier') && text.includes('Petit')) disableBtn(btn, container);
+                if (id === 'foie-g' && text.includes('Foie gras')) disableBtn(btn, container);
+                if (id === 'gravlax-g' && text.includes('Gravlax') && text.includes('Grand')) disableBtn(btn, container);
+                if (id === 'gravlax-p' && text.includes('Gravlax') && text.includes('Petit')) disableBtn(btn, container);
+                if (id === 'chutney-g' && text.includes('Chutney') && text.includes('Grand')) disableBtn(btn, container);
+                if (id === 'chutney-p' && text.includes('Chutney') && text.includes('Petit')) disableBtn(btn, container);
+                if (id === 'pain-g' && text.includes('Pain') && text.includes('Grand')) disableBtn(btn, container);
+                if (id === 'pain-p' && text.includes('Pain') && text.includes('Petit')) disableBtn(btn, container);
+            });
+        });
+
+    } catch (err) {
+        console.error('Error checking product availability:', err);
+    }
+}
+
+function disableBtn(btn, container) {
+    btn.disabled = true;
+    btn.style.backgroundColor = '#95a5a6';
+    btn.style.cursor = 'not-allowed';
+    btn.innerText = 'Indisponible';
+    btn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); return false; };
+}
+
+window.addEventListener('load', updateStorefrontAvailability);
+</script>
+
+</body>
+</html>
 async function updateStorefrontAvailability() {
     try {
         const SUPABASE_URL = 'https://uopyugjckbwvsxqurhwg.supabase.co';
