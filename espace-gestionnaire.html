@@ -127,7 +127,6 @@
                 <div class="form-group" style="margin-bottom: 10px;">
                     <label>Articles de la commande</label>
                     <div id="items-container">
-                        <!-- Initial item row -->
                         <div class="item-row">
                             <div style="flex: 3;">
                                 <label style="font-size:0.75em;">Produit</label>
@@ -191,10 +190,9 @@
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
+            if (event && event.target) event.target.classList.add('active');
 
-            if (tabId === 'overview') loadOverview();
-            if (tabId === 'reservations') loadOrders();
+            if (tabId === 'overview' || tabId === 'reservations') loadOrders();
             if (tabId === 'production') loadProduction();
             if (tabId === 'stocks') loadStocks();
         }
@@ -205,7 +203,6 @@
         }
         function closeModal() { document.getElementById('orderModal').style.display = 'none'; }
 
-        // Add a new product row in the walk-in modal
         function addItemRow() {
             const container = document.getElementById('items-container');
             const newRow = document.createElement('div');
@@ -237,7 +234,6 @@
             container.appendChild(newRow);
         }
 
-        // Remove a product row (ensuring at least one row remains)
         function removeItemRow(btn) {
             const rows = document.getElementsByClassName('item-row');
             if (rows.length > 1) {
@@ -248,7 +244,6 @@
             }
         }
 
-        // Auto-calculate total price across all product rows
         function updateWalkInPrice() {
             let total = 0;
             const rows = document.getElementsByClassName('item-row');
@@ -265,7 +260,7 @@
 
         async function loadOrders() {
             const container = document.getElementById('orders-container');
-            container.innerHTML = '<p>Chargement...</p>';
+            if (container) container.innerHTML = '<p>Chargement des réservations...</p>';
 
             const { data, error } = await supabaseClient
                 .from('orders')
@@ -273,7 +268,7 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                container.innerHTML = `<p style="color:red;">Erreur: ${error.message}</p>`;
+                if (container) container.innerHTML = `<p style="color:red;">Erreur: ${error.message}</p>`;
                 return;
             }
 
@@ -284,6 +279,8 @@
 
         function renderOrders(orders) {
             const container = document.getElementById('orders-container');
+            if (!container) return;
+            
             if (orders.length === 0) {
                 container.innerHTML = '<p>Aucune réservation trouvée.</p>';
                 return;
@@ -370,7 +367,6 @@
         async function saveManualOrder(e) {
             e.preventDefault();
             
-            // Gather all items from the dynamic rows
             const items = [];
             const rows = document.getElementsByClassName('item-row');
             for (let row of rows) {
