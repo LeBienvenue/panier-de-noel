@@ -305,9 +305,10 @@ async function saveManualOrder(e) {
                         "Pain d'épices du Kervao · 250 g": 'pain-g',
                         "Pain d'épices du Kervao · 125 g": 'pain-p'
                     };
-                    return { id: catalogKeyMap[i.name] || 'panier-g', quantity: i.quantity };
-                }) })
-            });
+                   return { id: catalogKeyMap[i.name] || 'panier-g', quantity: i.quantity };
+        })
+    })
+});
             const data = await response.json();
             if (data.url) {
                 window.location.href = data.url; // Redirect walk-in customer to secure Stripe payment link
