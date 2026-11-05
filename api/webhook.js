@@ -15,12 +15,12 @@ export default async function handler(req, res) {
   // Listen for completed checkout sessions from Stripe
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-
-    const customerName = session.customer_details?.name || 'Client';
+const customerName = session.customer_details?.name || 'Client';
     const customerEmail = session.customer_details?.email || '';
     const customerPhone = session.customer_details?.phone || '';
     const totalAmount = session.amount_total ? session.amount_total / 100 : 0;
     const items = JSON.parse(session.metadata?.items || '[]');
+    const notes = session.custom_fields?.find(f => f.key === 'customer_notes')?.text?.value || '';
 
     // 1. Insert the new order into Supabase
     const { error: orderError } = await supabase.from('orders').insert([{
@@ -30,7 +30,9 @@ export default async function handler(req, res) {
       customer_phone: customerPhone,
       total_amount: totalAmount,
       items: items,
+      notes: notes,
       status: 'Nouvelle'
+    }]);
     }]);
 
     if (orderError) {
