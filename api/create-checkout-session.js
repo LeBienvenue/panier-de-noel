@@ -1,64 +1,87 @@
-// Fonction serverless Vercel : crée UNE session Stripe Checkout pour tout le panier.
-// Les prix sont définis ICI (côté serveur) : le navigateur n'envoie que l'identifiant et la quantité.
-// Variables d'environnement Vercel :
-//   STRIPE_SECRET_KEY  (obligatoire) : clé secrète Stripe (sk_live_... ou sk_test_...)
-//   SITE_URL           (facultatif)  : ex. https://paniers-de-noel.vercel.app (sinon déduit de la requête)
-const Stripe = require('stripe');
+import Stripe from 'stripe';
+import { createClient } from '@supabase/supabase-js';
 
-const CATALOG = {
-  'panier-g':   { name: 'Panier de Noël complet · grand format', amount: 11000 },
-  'panier-p':   { name: 'Panier de Noël complet · petit format', amount: 5500 },
-  'foie-g':     { name: 'Foie gras de canard IGP Sud-Ouest Label Rouge · 500 g', amount: 6500 },
-  'gravlax-g':  { name: 'Gravlax de saumon Label Rouge · 500 g', amount: 4500 },
-  'gravlax-p':  { name: 'Gravlax de saumon Label Rouge · 250 g', amount: 2250 },
-  'chutney-g':  { name: 'Chutney de figues · 150 g', amount: 600 },
-  'chutney-p':  { name: 'Chutney de figues · 75 g', amount: 300 },
-  'pain-g':     { name: 'Pain d’épices du Kervao · 250 g', amount: 700 },
-  'pain-p':     { name: 'Pain d’épices du Kervao · 125 g', amount: 350 }
-};
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://uopyugjckbwvsxqurhwg.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
-module.exports = async (req, res) => {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Méthode non autorisée' });
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
-    const items = Array.isArray(req.body && req.body.items) ? req.body.items : [];
+    const { items } = req.body;
+
+    // 1. Fetch current product statuses from Supabase
+    const { data: dbProducts, error: dbError } = await supabase
+      .from('products')
+      .select('id, name, status, stock');
+
+    if (dbError) {
+      console.error('Supabase fetch error:', dbError);
+    }
+
+    // Map database settings by ID
+    const prodStatusMap = {};
+    (dbProducts || []).forEach(p => {
+      prodStatusMap[p.id] = p;
+    });
+
+    // 2. Product mapping with prices
+    const catalogMap = {
+      'panier-g': { name: 'Panier de Noël complet • Grand Format', price: 11000 },
+      'panier-p': { name: 'Panier de Noël complet • Petit Format', price: 5500 },
+      'foie-g': { name: 'Foie gras de canard', price: 6500 },
+      'gravlax-g': { name: 'Gravlax de saumon • Grand Format', price: 4500 },
+      'gravlax-p': { name: 'Gravlax de saumon • Petit Format', price: 2250 },
+      'chutney-g': { name: 'Chutney de figues • Grand Format', price: 600 },
+      'chutney-p': { name: 'Chutney de figues • Petit Format', price: 300 },
+      'pain-g': { name: 'Pain d’épices • Grand Format', price: 700 },
+      'pain-p': { name: 'Pain d’épices • Petit Format', price: 350 }
+    };
+
+    // 3. Check if any ordered item is marked "Fermée"
     const line_items = [];
-    for (const it of items) {
-      const p = CATALOG[it && it.id];
-      const quantity = Math.floor(Number(it && it.quantity));
-      if (!p || !(quantity >= 1 && quantity <= 50)) continue;
+    for (const item of items) {
+      const prodInfo = catalogMap[item.id];
+      const dbInfo = prodStatusMap[item.id];
+
+      if (!prodInfo) continue;
+
+      // Reject checkout if item is closed in back-office
+      if (dbInfo && dbInfo.status === 'Fermée') {
+        return res.status(400).json({
+          error: `Désolé, l'article "${prodInfo.name}" n'est plus disponible à la vente.`
+        });
+      }
+
       line_items.push({
-        quantity,
-        price_data: { currency: 'eur', unit_amount: p.amount, product_data: { name: p.name } }
+        price_data: {
+          currency: 'eur',
+          product_data: { name: prodInfo.name },
+          unit_amount: prodInfo.price,
+        },
+        quantity: item.quantity || 1,
       });
     }
-    if (!line_items.length) return res.status(400).json({ error: 'Panier vide ou invalide' });
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const origin = process.env.SITE_URL || `https://${req.headers.host}`;
+    // 4. Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      locale: 'fr',
-      allow_promotion_codes: true,
+      payment_method_types: ['card'],
       line_items,
-      phone_number_collection: { enabled: true },
-      billing_address_collection: 'required',
-   custom_fields: [
-        {
-            key: 'customer_notes',
-            label: { type: 'custom', custom: 'Notes ou allergies (facultatif)' },
-            type: 'text',
-            optional: true
-        }
-    ],
-      custom_text: {
-        submit: { message: 'Retrait le 23 décembre 2026 de 9h à 18h, Restaurant Le Kervao, 234 avenue de Ty Bos, 29000 Quimper. Merci de présenter votre e-mail de confirmation.' }
-      },
-      success_url: `${origin}/?commande=ok`,
-      cancel_url: `${origin}/#panier`
+      mode: 'payment',
+      allow_promotion_codes: true,
+      success_url: `${req.headers.origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin}/#commander`,
     });
+
     return res.status(200).json({ url: session.url });
+
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Erreur lors de la création du paiement' });
+    console.error('Stripe Session Error:', err);
+    return res.status(500).json({ error: err.message });
   }
-};
+}
