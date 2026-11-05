@@ -42,13 +42,8 @@ module.exports = async (req, res) => {
       line_items,
       phone_number_collection: { enabled: true },
       billing_address_collection: 'required',
-    custom_fields: [
-      {
-              key: 'customer_name_input',
-              label: { type: 'custom', custom: 'Nom et Prénom' },
-              type: 'text',
-              optional: false
-          },
+   custom_fields: [
+        {
             key: 'customer_notes',
             label: { type: 'custom', custom: 'Notes ou allergies (facultatif)' },
             type: 'text',
