@@ -522,5 +522,66 @@
   }
   renderCart();
 </script>
+  <!-- Script d'inactivation automatique des produits Fermés -->
+<script>
+async function updateStorefrontAvailability() {
+    try {
+        const SUPABASE_URL = 'https://uopyugjckbwvsxqurhwg.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_-5_GHObdmQBviGpwLhb9fA_GC2mmSj5';
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const { data: products } = await client.from('products').select('id, status');
+        if (!products) return;
+
+        // Map database IDs to your exact product titles
+        const idToNameMap = {
+            'panier-g': "Panier de Noël complet • Grand Format",
+            'panier-p': "Panier de Noël complet • Petit Format",
+            'foie-g': "Foie gras de canard",
+            'gravlax-g': "Gravlax de saumon • Grand Format",
+            'gravlax-p': "Gravlax de saumon • Petit Format",
+            'chutney-g': "Chutney de figues • Grand Format",
+            'chutney-p': "Chutney de figues • Petit Format",
+            'pain-g': "Pain d’épices • Grand Format",
+            'pain-p': "Pain d’épices • Petit Format"
+        };
+
+        products.forEach(p => {
+            if (p.status === 'Fermée') {
+                const targetName = idToNameMap[p.id];
+                if (!targetName) return;
+
+                // Find the product card by matching the heading text
+                const headings = document.querySelectorAll('h3');
+                headings.forEach(h3 => {
+                    if (h3.textContent.trim() === targetName) {
+                        const card = h3.closest('div'); // finds the parent card container
+                        const btn = card.querySelector('button');
+                        if (btn) {
+                            btn.disabled = true;
+                            btn.style.backgroundColor = '#95a5a6';
+                            btn.style.cursor = 'not-allowed';
+                            btn.innerText = 'Indisponible';
+                        }
+                        if (!card.querySelector('.unavailable-badge')) {
+                            const badge = document.createElement('div');
+                            badge.className = 'unavailable-badge';
+                            badge.style.color = '#e74c3c';
+                            badge.style.fontWeight = 'bold';
+                            badge.style.marginTop = '8px';
+                            badge.style.fontSize = '0.85em';
+                            badge.innerText = '⚠️ Actuellement indisponible';
+                            card.appendChild(badge);
+                        }
+                    }
+                });
+            }
+        });
+    } catch (err) {
+        console.error('Error checking product availability:', err);
+    }
+}
+document.addEventListener('DOMContentLoaded', updateStorefrontAvailability);
+</script>
 </body>
 </html>
