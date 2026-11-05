@@ -25,7 +25,6 @@
         .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
         .badge { padding: 4px 10px; border-radius: 4px; font-size: 0.85em; font-weight: bold; background: #eee; color: #333; }
         
-        /* Status badge colors */
         .status-nouvelle { background: #f39c12; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
         .status-confirmee { background: #3498db; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
         .status-prete { background: #27ae60; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
@@ -41,7 +40,7 @@
         button.primary-btn { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; font-weight: bold; color: #333; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
@@ -192,6 +191,29 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let allOrders = [];
+
+        // Official Catalog matching website names, descriptions, and weights
+        const officialCatalog = [
+            { name: "Panier de Noël complet", desc: "500 g foie gras · 500 g gravelax · 250 g pain d'épices · 150 g chutney" },
+            { name: "Panier de Noël complet — demi-format", desc: "250 g foie gras · 250 g gravelax · 125 g pain d'épices · 75 g chutney" },
+            { name: "Gravlax de saumon Label Rouge — origine Écosse", desc: "Origine Écosse · saumure au sel de Guérande · 500 g" },
+            { name: "Gravlax de saumon Label Rouge — origine Écosse, demi-portion", desc: "Origine Écosse · saumure au sel de Guérande · 250 g" },
+            { name: "Foie gras de canard IGP Sud-Ouest Label Rouge", desc: "IGP Sud-Ouest · Label Rouge · 500 g" },
+            { name: "Chutney de figues de tous !", desc: "Figues & vinaigre de cidre · 150 g" },
+            { name: "Chutney de figues de tous ! — demi-portion", desc: "Figues & vinaigre de cidre · 75 g" },
+            { name: "Pain d'épices du Kervao", desc: "Recette au beurre · 250 g" },
+            { name: "Pain d'épices du Kervao — demi-portion", desc: "Recette au beurre · 125 g" },
+            // Also include legacy/walk-in names for compatibility matching
+            { name: "Panier de Noël complet · grand format", desc: "Grand format complet" },
+            { name: "Panier de Noël complet · petit format", desc: "Petit format complet" },
+            { name: "Foie gras de canard IGP Sud-Ouest Label Rouge · 500 g", desc: "IGP Sud-Ouest · Label Rouge · 500 g" },
+            { name: "Gravlax de saumon Label Rouge · 500 g", desc: "Label Rouge · 500 g" },
+            { name: "Gravlax de saumon Label Rouge · 250 g", desc: "Label Rouge · 250 g" },
+            { name: "Chutney de figues · 150 g", desc: "150 g" },
+            { name: "Chutney de figues · 75 g", desc: "75 g" },
+            { name: "Pain d'épices du Kervao · 250 g", desc: "250 g" },
+            { name: "Pain d'épices du Kervao · 125 g", desc: "125 g" }
+        ];
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -507,6 +529,7 @@
             const tbody = document.getElementById('production-table-body');
             const { data: orders } = await supabaseClient.from('orders').select('items, status');
             
+            // Tally quantities from active/confirmed orders (skip cancelled orders)
             let counts = {};
             (orders || []).forEach(o => {
                 if (o.status === 'Annulée') return;
@@ -514,22 +537,39 @@
                     const items = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
                     if (Array.isArray(items)) {
                         items.forEach(i => {
-                            const name = i.name || i.title || 'Article';
-                            counts[name] = (counts[name] || 0) + (i.quantity || 1);
+                            let name = (i.name || i.title || '').trim();
+                            const qty = i.quantity || 1;
+
+                            // Normalize names to match catalog
+                            if (name.includes('grand format') || name.includes('Panier de Noël complet · grand format')) {
+                                name = 'Panier de Noël complet';
+                            } else if (name.includes('petit format') || name.includes('Panier de Noël complet · petit format')) {
+                                name = 'Panier de Noël complet — demi-format';
+                            }
+
+                            counts[name] = (counts[name] || 0) + qty;
                         });
                     }
                 } catch(e) {}
             });
 
-            const keys = Object.keys(counts);
-            if (keys.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2">Aucune production requise pour le moment.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = keys.map(name => `
-                <tr><td><strong>${name}</strong></td><td>${counts[name]} unités</td></tr>
-            `).join('');
+            // Render every single item from the official catalog with description and count
+            tbody.innerHTML = officialCatalog.map(prod => {
+                const totalQty = counts[prod.name] || 0;
+                return `
+                    <tr>
+                        <td>
+                            <strong style="font-size: 1.05em; color: #2c3e50;">${prod.name}</strong>
+                            <div style="font-size: 0.85em; color: #666; margin-top: 3px;">${prod.desc}</div>
+                        </td>
+                        <td>
+                            <span style="font-size: 1.1em; font-weight: bold; color: ${totalQty > 0 ? '#e67e22' : '#95a5a6'};">
+                                ${totalQty} à préparer
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         async function loadStocks() {
