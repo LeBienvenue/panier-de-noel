@@ -15,7 +15,8 @@ export default async function handler(req, res) {
   // Listen for completed checkout sessions from Stripe
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-const customerName = session.customer_details?.name || 'Client';
+const inputName = session.custom_fields?.find(f => f.key === 'customer_name_input')?.text?.value;
+    const customerName = inputName || session.customer_details?.name || 'Client';
     const customerEmail = session.customer_details?.email || '';
     const customerPhone = session.customer_details?.phone || '';
     const totalAmount = session.amount_total ? session.amount_total / 100 : 0;
