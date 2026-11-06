@@ -535,29 +535,25 @@ async function updateStorefrontAvailability() {
         if (!products) return;
 
         products.forEach(function(p) {
-            if (p.status === 'Fermée') {
-                const itemElem = document.querySelector('[data-id="' + p.id + '"]');
-                if (itemElem) {
-                    // Lock down the entire container and prevent all clicks
-                    itemElem.style.pointerEvents = 'none';
-                    itemElem.style.opacity = '0.4';
+            const itemElem = document.querySelector('[data-id="' + p.id + '"]');
+            if (!itemElem) return;
 
-                    // Disable any buttons inside this card directly
-                    const buttons = itemElem.querySelectorAll('button');
-                    buttons.forEach(function(btn) {
-                        btn.disabled = true;
-                        btn.style.cursor = 'not-allowed';
-                    });
-                    
-                    // Add the visual warning message if not already there
-                    if (!itemElem.querySelector('.closed-msg')) {
-                        const msg = document.createElement('div');
-                        msg.className = 'closed-msg';
-                        styleString = 'color: #e74c3c; font-weight: bold; margin-top: 6px; font-size: 0.85rem;';
-                        msg.style.cssText = styleString;
-                        msg.innerText = '⚠️ Actuellement indisponible';
-                        itemElem.appendChild(msg);
-                    }
+            if (p.status === 'Fermée') {
+                itemElem.setAttribute('data-closed', 'true');
+                itemElem.style.opacity = '0.4';
+
+                const buttons = itemElem.querySelectorAll('button');
+                buttons.forEach(function(btn) {
+                    btn.disabled = true;
+                    btn.style.cursor = 'not-allowed';
+                });
+                
+                if (!itemElem.querySelector('.closed-msg')) {
+                    const msg = document.createElement('div');
+                    msg.className = 'closed-msg';
+                    msg.style.cssText = 'color: #e74c3c; font-weight: bold; margin-top: 6px; font-size: 0.85rem;';
+                    msg.innerText = '⚠️ Actuellement indisponible';
+                    itemElem.appendChild(msg);
                 }
             }
         });
@@ -566,7 +562,17 @@ async function updateStorefrontAvailability() {
     }
 }
 
-// Run after the page and its dynamic buttons have finished drawing
+// Global click interceptor to completely block adding closed items to cart
+document.addEventListener('click', function(e) {
+    const li = e.target.closest('[data-qty]');
+    if (li && li.getAttribute('data-closed') === 'true') {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        alert('Ce produit est actuellement indisponible.');
+        return false;
+    }
+}, true);
+
 window.addEventListener('load', function() {
     setTimeout(updateStorefrontAvailability, 350);
 });
