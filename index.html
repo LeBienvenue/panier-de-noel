@@ -523,7 +523,7 @@
  523      renderCart();
 524  </script>
 <script>
-async function updateStorefrontAvailability() {
+async function checkAvailability() {
     try {
         const SUPABASE_URL = 'https://uopyugjckbwvsxqurhwg.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_5_GHObdmQBvIgpwLhb9fa_GC2mmsJ5';
@@ -535,40 +535,34 @@ async function updateStorefrontAvailability() {
         if (!products) return;
 
         products.forEach(p => {
-            const li = document.querySelector(`[data-id="${p.id}"]`);
-            if (!li) return;
-
-            const card = li.closest('article') || li.closest('div');
-            if (!card) return;
-
             if (p.status === 'Fermée') {
-                const controls = card.querySelector('[data-controls]') || card;
-                const buttons = controls.querySelectorAll('button');
-                
-                buttons.forEach(btn => {
-                    btn.disabled = true;
-                    btn.style.opacity = '0.4';
-                    btn.style.cursor = 'not-allowed';
-                });
+                // Target ONLY the element for this specific closed item ID
+                const itemElem = document.querySelector(`[data-id="${p.id}"]`);
+                if (itemElem) {
+                    // Disable click interactions on this card container
+                    itemElem.style.pointerEvents = 'none';
+                    itemElem.style.opacity = '0.5';
 
-                if (!card.querySelector('.unavailable-badge')) {
-                    const badge = document.createElement('div');
-                    badge.className = 'unavailable-badge';
-                    badge.style.color = '#e74c3c';
-                    badge.style.fontWeight = 'bold';
-                    badge.style.marginTop = '8px';
-                    badge.style.fontSize = '0.85em';
-                    badge.innerText = '⚠️ Actuellement indisponible';
-                    card.appendChild(badge);
+                    // Append the visual indicator
+                    if (!itemElem.querySelector('.closed-msg')) {
+                        const msg = document.createElement('div');
+                        msg.className = 'closed-msg';
+                        msg.style.cssText = 'color: #e74c3c; font-weight: bold; margin-top: 6px; font-size: 0.85rem;';
+                        msg.innerText = '⚠️ Actuellement indisponible';
+                        itemElem.appendChild(msg);
+                    }
                 }
             }
         });
     } catch (err) {
-        console.error('Error checking product availability:', err);
+        console.error('Availability check error:', err);
     }
 }
 
-document.addEventListener('DOMContentLoaded', updateStorefrontAvailability);
+// Wait until after the page and card buttons have finished rendering
+window.addEventListener('load', () => {
+    setTimeout(checkAvailability, 300);
+});
 </script>
 </body>
 </html>
