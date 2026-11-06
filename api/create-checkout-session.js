@@ -80,7 +80,7 @@ export default async function handler(req, res) {
         custom_fields: [
             {
                 key: 'note',
-                label: { type: 'custom', custom: 'Note ou instructions (optionnel)' },
+               label: { type: 'custom', name: 'Note ou instructions (optionnel)' },
                 type: 'text',
                 optional: true,
             },
