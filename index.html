@@ -534,49 +534,33 @@ async function updateStorefrontAvailability() {
         const { data: products } = await client.from('products').select('id, status');
         if (!products) return;
 
-        const idToNameMap = {
-            'panier-g': 'Panier de Noël complet • Grand Format',
-            'panier-p': 'Panier de Noël complet • Petit Format',
-            'foie-g': 'Foie gras de canard',
-            'gravlax-g': 'Gravlax de saumon • Grand Format',
-            'gravlax-p': 'Gravlax de saumon • Petit Format',
-            'chutney-g': 'Chutney de figues • Grand Format',
-            'chutney-p': 'Chutney de figues • Petit Format',
-            'pain-g': 'Pain d’épices • Grand Format',
-            'pain-p': 'Pain d’épices • Petit Format'
-        };
-
         products.forEach(p => {
+            const li = document.querySelector(`[data-id="${p.id}"]`);
+            if (!li) return;
+
+            const card = li.closest('article') || li.closest('div');
+            if (!card) return;
+
             if (p.status === 'Fermée') {
-                const targetName = idToNameMap[p.id];
-                if (!targetName) return;
-
-                const headings = document.querySelectorAll('h3');
-                headings.forEach(h3 => {
-                    if (h3.textContent.trim() === targetName) {
-                        const card = h3.closest('article') || h3.closest('div');
-                        if (card) {
-                            const buttons = card.querySelectorAll('button');
-                            buttons.forEach(btn => {
-                                btn.disabled = true;
-                                btn.style.backgroundColor = '#95a5a6';
-                                btn.style.cursor = 'not-allowed';
-                                btn.innerText = 'Indisponible';
-                            });
-
-                            if (!card.querySelector('.unavailable-badge')) {
-                                const badge = document.createElement('div');
-                                badge.className = 'unavailable-badge';
-                                badge.style.color = '#e74c3c';
-                                badge.style.fontWeight = 'bold';
-                                badge.style.marginTop = '8px';
-                                badge.style.fontSize = '0.85em';
-                                badge.innerText = '⚠️ Actuellement indisponible';
-                                card.appendChild(badge);
-                            }
-                        }
-                    }
+                const controls = card.querySelector('[data-controls]') || card;
+                const buttons = controls.querySelectorAll('button');
+                
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.4';
+                    btn.style.cursor = 'not-allowed';
                 });
+
+                if (!card.querySelector('.unavailable-badge')) {
+                    const badge = document.createElement('div');
+                    badge.className = 'unavailable-badge';
+                    badge.style.color = '#e74c3c';
+                    badge.style.fontWeight = 'bold';
+                    badge.style.marginTop = '8px';
+                    badge.style.fontSize = '0.85em';
+                    badge.innerText = '⚠️ Actuellement indisponible';
+                    card.appendChild(badge);
+                }
             }
         });
     } catch (err) {
