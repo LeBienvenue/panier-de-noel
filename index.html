@@ -538,16 +538,23 @@ async function updateStorefrontAvailability() {
             if (p.status === 'Fermée') {
                 const itemElem = document.querySelector('[data-id="' + p.id + '"]');
                 if (itemElem) {
+                    // Lock down the entire container and prevent all clicks
                     itemElem.style.pointerEvents = 'none';
-                    itemElem.style.opacity = '0.5';
+                    itemElem.style.opacity = '0.4';
+
+                    // Disable any buttons inside this card directly
+                    const buttons = itemElem.querySelectorAll('button');
+                    buttons.forEach(function(btn) {
+                        btn.disabled = true;
+                        btn.style.cursor = 'not-allowed';
+                    });
                     
+                    // Add the visual warning message if not already there
                     if (!itemElem.querySelector('.closed-msg')) {
                         const msg = document.createElement('div');
                         msg.className = 'closed-msg';
-                        msg.style.color = '#e74c3c';
-                        msg.style.fontWeight = 'bold';
-                        msg.style.marginTop = '6px';
-                        msg.style.fontSize = '0.85rem';
+                        styleString = 'color: #e74c3c; font-weight: bold; margin-top: 6px; font-size: 0.85rem;';
+                        msg.style.cssText = styleString;
                         msg.innerText = '⚠️ Actuellement indisponible';
                         itemElem.appendChild(msg);
                     }
@@ -559,8 +566,9 @@ async function updateStorefrontAvailability() {
     }
 }
 
+// Run after the page and its dynamic buttons have finished drawing
 window.addEventListener('load', function() {
-    setTimeout(updateStorefrontAvailability, 300);
+    setTimeout(updateStorefrontAvailability, 350);
 });
 </script>
 </body>
