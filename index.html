@@ -523,7 +523,7 @@
  523      renderCart();
 524  </script>
 <script>
-async function checkAvailability() {
+async function updateStorefrontAvailability() {
     try {
         const SUPABASE_URL = 'https://uopyugjckbwvsxqurhwg.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_5_GHObdmQBvIgpwLhb9fa_GC2mmsJ5';
@@ -534,20 +534,20 @@ async function checkAvailability() {
         const { data: products } = await client.from('products').select('id, status');
         if (!products) return;
 
-        products.forEach(p => {
+        products.forEach(function(p) {
             if (p.status === 'Fermée') {
-                // Target ONLY the element for this specific closed item ID
-                const itemElem = document.querySelector(`[data-id="${p.id}"]`);
+                const itemElem = document.querySelector('[data-id="' + p.id + '"]');
                 if (itemElem) {
-                    // Disable click interactions on this card container
                     itemElem.style.pointerEvents = 'none';
                     itemElem.style.opacity = '0.5';
-
-                    // Append the visual indicator
+                    
                     if (!itemElem.querySelector('.closed-msg')) {
                         const msg = document.createElement('div');
                         msg.className = 'closed-msg';
-                        msg.style.cssText = 'color: #e74c3c; font-weight: bold; margin-top: 6px; font-size: 0.85rem;';
+                        msg.style.color = '#e74c3c';
+                        msg.style.fontWeight = 'bold';
+                        msg.style.marginTop = '6px';
+                        msg.style.fontSize = '0.85rem';
                         msg.innerText = '⚠️ Actuellement indisponible';
                         itemElem.appendChild(msg);
                     }
@@ -559,9 +559,8 @@ async function checkAvailability() {
     }
 }
 
-// Wait until after the page and card buttons have finished rendering
-window.addEventListener('load', () => {
-    setTimeout(checkAvailability, 300);
+window.addEventListener('load', function() {
+    setTimeout(updateStorefrontAvailability, 300);
 });
 </script>
 </body>
