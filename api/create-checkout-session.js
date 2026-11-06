@@ -70,14 +70,16 @@ export default async function handler(req, res) {
 
     // 4. Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items,
-      mode: 'payment',
-      allow_promotion_codes: true,
-      success_url: `${req.headers.origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/#commander`,
+        payment_method_types: ['card'],
+        line_items,
+        mode: 'payment',
+        allow_promotion_codes: true,
+        phone_number_collection: {
+            enabled: true,
+        },
+        success_url: `${req.headers.origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.origin}/#commander`,
     });
-
     return res.status(200).json({ url: session.url });
 
   } catch (err) {
