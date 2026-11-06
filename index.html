@@ -534,12 +534,14 @@ async function updateStorefrontAvailability() {
         const { data: products } = await client.from('products').select('id, status');
         if (!products) return;
 
+        // Keep a global list of closed items
+        window.closedItemIds = products.filter(p => p.status === 'Fermée').map(p => p.id);
+
         products.forEach(function(p) {
             const itemElem = document.querySelector('[data-id="' + p.id + '"]');
             if (!itemElem) return;
 
             if (p.status === 'Fermée') {
-                itemElem.setAttribute('data-closed', 'true');
                 itemElem.style.opacity = '0.4';
 
                 const buttons = itemElem.querySelectorAll('button');
@@ -557,21 +559,38 @@ async function updateStorefrontAvailability() {
                 }
             }
         });
+
+        // Purge any closed items from the shopping cart immediately
+        if (typeof cart !== 'undefined' && window.closedItemIds.length > 0) {
+            let removed = false;
+            window.closedItemIds.forEach(id => {
+                if (cart[id]) {
+                    delete cart[id];
+                    removed = true;
+                }
+            });
+            if (removed) {
+                if (typeof save === 'function') save();
+                if (typeof renderCart === 'function') renderCart();
+            }
+        }
     } catch (err) {
         console.error('Availability check error:', err);
     }
 }
 
-// Global click interceptor to completely block adding closed items to cart
-document.addEventListener('click', function(e) {
-    const li = e.target.closest('[data-qty]');
-    if (li && li.getAttribute('data-closed') === 'true') {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-        alert('Ce produit est actuellement indisponible.');
-        return false;
+// Continuously watch and purge cart if someone tries to slip a closed item in
+setInterval(function() {
+    if (window.closedItemIds && typeof cart !== 'undefined') {
+        window.closedItemIds.forEach(id => {
+            if (cart[id]) {
+                delete cart[id];
+                if (typeof save === 'function') save();
+                if (typeof renderCart === 'function') renderCart();
+            }
+        });
     }
-}, true);
+}, 500);
 
 window.addEventListener('load', function() {
     setTimeout(updateStorefrontAvailability, 350);
