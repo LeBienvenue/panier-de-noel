@@ -83,7 +83,7 @@ export default async function handler(req, res) {
                 label: { type: 'custom', custom: 'Note ou instructions (optionnel)' },
                 type: 'text',
                 optional: true,
-            }
+            },
         ],
         success_url: `${req.headers.origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${req.headers.origin}/#commander`,
