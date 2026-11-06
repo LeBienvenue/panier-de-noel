@@ -77,9 +77,16 @@ export default async function handler(req, res) {
         phone_number_collection: {
             enabled: true,
         },
+        custom_fields: [
+            {
+                key: 'note',
+                label: { type: 'custom', custom: 'Note ou instructions (optionnel)' },
+                type: 'text',
+                optional: true,
+            }
+        ],
         success_url: `${req.headers.origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${req.headers.origin}/#commander`,
-    });
     return res.status(200).json({ url: session.url });
 
   } catch (err) {
