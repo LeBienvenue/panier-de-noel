@@ -53,16 +53,20 @@ export default async function handler(req, res) {
         const statusById = {};
         (dbProducts || []).forEach(p => { statusById[p.id] = p.status; });
 
-        // 3. Build the Stripe lines and refuse closed products
+        // 3. Refuse the order if some products are closed, and tell the website which ones
+        const closed = ids.filter(id => statusById[id] === 'Fermée');
+        if (closed.length > 0) {
+            const names = closed.map(id => `« ${catalogMap[id].name} »`).join(', ');
+            return res.status(400).json({
+                error: `Désolé, ces articles ne sont plus disponibles : ${names}.`,
+                closed
+            });
+        }
+
+        // 4. Build the Stripe lines
         const line_items = [];
         for (const id of ids) {
             const prodInfo = catalogMap[id];
-
-            if (statusById[id] === 'Fermée') {
-                return res.status(400).json({
-                    error: `Désolé, l'article "${prodInfo.name}" n'est plus disponible à la vente.`
-                });
-            }
 
             line_items.push({
                 price_data: {
@@ -79,7 +83,7 @@ export default async function handler(req, res) {
 
         const origin = req.headers.origin || `https://${req.headers.host}`;
 
-        // 4. Create Stripe Checkout Session
+        // 5. Create Stripe Checkout Session
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items,
@@ -88,6 +92,16 @@ export default async function handler(req, res) {
             phone_number_collection: {
                 enabled: true,
             },
+            // Optional box on the payment page; webhook.js saves it as the order's notes
+            custom_fields: [
+                {
+                    key: 'customer_notes',
+                    label: { type: 'custom', custom: 'Allergies ou remarques (facultatif)' },
+                    type: 'text',
+                    optional: true,
+                    text: { maximum_length: 200 },
+                },
+            ],
             metadata: {
                 items: JSON.stringify(basket),
             },
