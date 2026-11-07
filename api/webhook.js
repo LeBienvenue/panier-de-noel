@@ -1,4 +1,7 @@
+import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const supabase = createClient(
   (process.env.SUPABASE_URL || '').replace(/\/+$/, ''),
@@ -18,15 +21,27 @@ const productNames = {
   'pain-p': 'Pain d’épices • Petit Format'
 };
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+const json = (body, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' }
+  });
+
+export async function POST(request) {
+  // 1. Make sure the message really comes from Stripe (signature check on the raw text)
+  const rawBody = await request.text();
+  const signature = request.headers.get('stripe-signature');
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('Invalid Stripe signature:', err.message);
+    return json({ error: 'Invalid signature' }, 400);
   }
 
-  const event = req.body;
-
-  // Listen for completed checkout sessions from Stripe
-  if (event && event.type === 'checkout.session.completed') {
+  // 2. Listen for completed checkout sessions
+  if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
 
     // Stripe can send the same event twice: do nothing if this order is already saved
@@ -37,7 +52,7 @@ export default async function handler(req, res) {
       .limit(1);
 
     if (existing && existing.length > 0) {
-      return res.status(200).json({ received: true, duplicate: true });
+      return json({ received: true, duplicate: true });
     }
 
     const customerName = session.customer_details?.name || 'Client';
@@ -77,9 +92,9 @@ export default async function handler(req, res) {
     if (orderError) {
       console.error('Error recording order:', orderError);
       // Answer with an error so that Stripe tries again later instead of losing the order
-      return res.status(500).json({ error: 'Could not record order' });
+      return json({ error: 'Could not record order' }, 500);
     }
   }
 
-  return res.status(200).json({ received: true });
+  return json({ received: true });
 }
